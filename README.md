@@ -1,61 +1,144 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+Laravel API Documentation
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+This document provides the steps for building the CRUD Laravel API. Here I have used a posts table which used to store [title and description]. Below is the structure of the project.
+1. Project Setup
+I installed Laravel in my local machine and created a laravel project named “crud-api”.
 
-## About Laravel
+    composer create-project laravel/laravel crud-api
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+Then to install api in the project run below in the terminal.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+    php artisan install:api 
+2. Configure Database
+In the .env file, I have updated the details as per my local database connection. Here I used a mysql database. 
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=laravel
+DB_USERNAME=root
+DB_PASSWORD=Raj@1234
 
-## Learning Laravel
+Then run below given command in the terminal:
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+    php artisan migrate
+3. Create Model, Migration, and Controller:
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+Run this below given command in the terminal which helps to generate a model, migration and controller files.
+ 
+    php artisan make:model Post -mc
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+-m	It Also create a migration file for the posts table
+-c	It Also create a controller for the model (PostController)
 
-## Laravel Sponsors
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
 
-### Premium Partners
+4. Migration File:
+In the Migration file, I have defined the structure of the database table (posts). And added two fields in the schema (title, description).
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+Schema::create('posts', function (Blueprint $table) {
+    $table->id();
+    $table->string('title');
+    $table->text('description');
+    $table->timestamps();
+});
 
-## Contributing
+Then Run migration:
+    php artisan migrate
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+5. Model File:
+This line in the Post model defines which fields are allowed to be mass-assigned. Mass assignment is a convenient way to create or update a model using an array of key-value pairs.
 
-## Code of Conduct
+Added below given line in the Model file (Post.php).
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+protected $fillable = ['title', 'description'];
 
-## Security Vulnerabilities
+6. API Routes:
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+In the`routes/api.php` file define the api routes for the “Post” model. 
 
-## License
+routes/api.php file:
+<?php
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\PostController;
+
+Route::get('/posts', [PostController::class, 'index']);
+
+Route::get('/posts/{id}', [PostController::class, 'show']);
+
+Route::post('/posts', [PostController::class, 'store']);
+
+Route::put('/posts/{id}', [PostController::class, 'update']);
+
+Route::delete('/posts/{id}', [PostController::class, 'destroy']);
+
+Route::get('/user', function (Request $request) {
+    return $request->user();
+})->middleware('auth:sanctum');
+
+7. Controller File:
+In the controller file, I have defined the logic for handling api requests of the “Post” model.
+
+`app/Http/Controllers/PostController.php file`:
+
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Post;
+use Illuminate\Http\Request;
+
+class PostController extends Controller
+{
+    public function index() {
+        return Post::all();
+    }
+
+    public function store(Request $request) {
+        $post = Post::create($request->only(['title', 'description']));
+        return response()->json($post, 201);
+    }
+
+    public function show(Post $post) {
+        return $post;
+    }
+
+    public function update(Request $request, Post $post) {
+        $post->update($request->only(['title', 'description']));
+        return response()->json($post);
+    }
+
+    public function destroy(Post $post)
+{
+    $post->delete();
+    return response()->json(['message' => 'Post deleted successfully'], 200);
+}
+}
+
+
+
+8. API Endpoints
+
+Method
+Endpoint
+Description
+GET
+/api/posts
+List all posts
+GET BY ID
+/api/posts/{id}
+Get a specific post by id
+POST
+/api/posts
+Create a post
+PUT
+/api/posts/{id}
+Update a post by id
+DELETE
+/api/posts/{id}
+Delete a post by id
+
+
+
